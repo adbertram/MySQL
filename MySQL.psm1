@@ -111,7 +111,6 @@ function Connect-MySqlServer
 		[pscredential]$Credential,
 		
 		[Parameter()]
-		[ValidateScript({ Test-Connection -ComputerName $_ -Quiet -Count 1 })]
 		[ValidateNotNullOrEmpty()]
 		[string]$ComputerName = $env:COMPUTERNAME,
 		
