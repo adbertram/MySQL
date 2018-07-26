@@ -1315,3 +1315,77 @@ function Invoke-MySqlQuery
 		}
 	}
 }
+
+function Invoke-MySqlParamQuery
+{
+    <#
+        .SYNOPSIS
+            Run a parameterized ad-hoc query against a MySQL Server
+        .DESCRIPTION
+            This function can be used to run parameterized ad-hoc queries against a MySQL Server. 
+        .PARAMETER Connection
+            A connection object that represents an open connection to MySQL Server
+        .PARAMETER Query
+            A valid MySQL query
+        .PARAMETER Parameters
+            An array of parameters
+        .PARAMETER Values
+            An array of values for the parameters
+        .EXAMPLE
+            Invoke-MySqlParamQuery -Connection $Connection -Query "INSERT INTO foo (Animal, Name) VALUES (@animal, @name);" -Parameters "@animal","@name" -Values "Bird","Poll"
+
+            Description
+            -----------
+            Add data to a sql table
+        .NOTES
+            FunctionName : Invoke-MySqlParamQuery
+            Created by   : ThatAstronautGuy
+            Date Coded   : 25/07/2018
+    #>
+    [CmdletBinding()]
+	Param
+	(
+		[Parameter(Mandatory)]
+		[ValidateNotNullOrEmpty()]
+		[string]$Query,
+		
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[MySql.Data.MySqlClient.MySqlConnection]$Connection = $MySQLConnection,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Parameters,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Values
+	)
+	begin
+	{
+		$ErrorActionPreference = 'Stop'
+	}
+	Process
+	{
+		try
+		{
+			
+			[MySql.Data.MySqlClient.MySqlCommand]$command = New-Object MySql.Data.MySqlClient.MySqlCommand
+            $command.Connection = $Connection
+			$command.CommandText = $Query
+            $command.Prepare()
+            for($i = 0; $i -lt $parameters.Count; $i++){
+                $command.Parameters.AddWithValue($Parameters[$i], $values[$i])
+            }
+			[MySql.Data.MySqlClient.MySqlDataAdapter]$dataAdapter = New-Object MySql.Data.MySqlClient.MySqlDataAdapter($command)
+			$dataSet = New-Object System.Data.DataSet
+			$recordCount = $dataAdapter.Fill($dataSet)
+			Write-Verbose "$($recordCount) records found"
+			$dataSet.Tables.foreach{$_}
+		}
+		catch
+		{
+			Write-Error -Message $_.Exception.Message
+		}
+	}
+}
