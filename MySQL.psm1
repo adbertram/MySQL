@@ -2,9 +2,8 @@ Set-StrictMode -Version Latest
 
 $null = [System.Reflection.Assembly]::LoadWithPartialName('MySql.Data')
 
-function Connect-MySqlServer
-{
-	<#
+function Connect-MySqlServer {
+    <#
 	.SYNOPSIS
 		Connect to a MySQL Server
 	.DESCRIPTION
@@ -102,65 +101,74 @@ function Connect-MySqlServer
 	.LINK
 		https://github.com/jeffpatton1971/mod-posh/wiki/MySQL#Connect-MySqlServer
 	#>
-	[OutputType('MySql.Data.MySqlClient.MySqlConnection')]
-	[CmdletBinding()]
-	Param
-	(
-		[Parameter(Mandatory)]
-		[ValidateNotNullOrEmpty()]
-		[pscredential]$Credential,
+    [OutputType('MySql.Data.MySqlClient.MySqlConnection')]
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]$Credential,
 		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$ComputerName = $env:COMPUTERNAME,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$ComputerName = $env:COMPUTERNAME,
 		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[int]$Port = 3306,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]$Port = 3306,
 		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[string]$Database,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$Database,
 		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[int]$CommandTimeOut = 30,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]$CommandTimeOut = 30,
 		
-		[Parameter()]
-		[ValidateNotNullOrEmpty()]
-		[int]$ConnectionTimeOut = 15
-	)
-	begin
-	{
-		$ErrorActionPreference = 'Stop'
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]$ConnectionTimeOut = 15,
 		
-		if ($PSBoundParameters.ContainsKey('Database')) {
-			$connectionString = 'server={0};port={1};uid={2};pwd={3};database={4};' -f $ComputerName,$Port,$Credential.UserName, $Credential.GetNetworkCredential().Password,$Database
-		}
-		else
-		{
-			$connectionString = 'server={0};port={1};uid={2};pwd={3};' -f $ComputerName, $Port, $Credential.UserName, $Credential.GetNetworkCredential().Password
-		}
-		# Added
-		$connectionString = $connectionString + "default command timeout=$CommandTimeOut; Connection Timeout=$ConnectionTimeOut;Allow User Variables=True"
+        [Parameter()]
+        [switch]
+        $UseSSL
+    )
+    begin {	
+        $ErrorActionPreference = 'Stop'
+		
+        if ($PSBoundParameters.ContainsKey('Database')) {
+            $connectionString = 'server={0};port={1};uid={2};pwd={3};database={4};' -f $ComputerName, $Port, $Credential.UserName, $Credential.GetNetworkCredential().Password, $Database
+        }
+        else {
+            $connectionString = 'server={0};port={1};uid={2};pwd={3};' -f $ComputerName, $Port, $Credential.UserName, $Credential.GetNetworkCredential().Password
+        }
+        # Added
+        If (($UseSSL)) {
+            
+            $connectionString = $connectionString + "default command timeout=$CommandTimeOut; Connection Timeout=$ConnectionTimeOut;Allow User Variables=True"
+
+        }
+
+        Else {
+
+            $connectionString = $connectionString + "default command timeout=$CommandTimeOut; Connection Timeout=$ConnectionTimeOut;Allow User Variables=True;SslMode=None"
+
+        }    
 	}
-	process
-	{
-		try
-		{
-			[MySql.Data.MySqlClient.MySqlConnection]$conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connectionString)
-			$conn.Open()
-			$Global:MySQLConnection = $conn
-			if ($PSBoundParameters.ContainsKey('Database')) {
-				$null =  New-Object MySql.Data.MySqlClient.MySqlCommand("USE $Database", $conn)
-			}
-			$conn
-		}
-		catch
-		{
-			Write-Error -Message $_.Exception.Message
-		}
-	}
+    process {
+        try {
+            [MySql.Data.MySqlClient.MySqlConnection]$conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connectionString)
+            $conn.Open()
+            $Global:MySQLConnection = $conn
+            if ($PSBoundParameters.ContainsKey('Database')) {
+                $null = New-Object MySql.Data.MySqlClient.MySqlCommand("USE $Database", $conn)
+            }
+            $conn
+        }
+        catch {
+            Write-Error -Message $_.Exception.Message
+        }
+    }
 }
 
 function Disconnect-MySqlServer
