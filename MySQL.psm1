@@ -1,6 +1,6 @@
 Set-StrictMode -Version Latest
 
-#$null = [System.Reflection.Assembly]::LoadWithPartialName('MySql.Data')
+$null = [System.Reflection.Assembly]::LoadWithPartialName('MySql.Data')
 
 $pubpath=$PSScriptRoot + "\public\"
 $publist=Get-ChildItem -Path $pubpath -Filter "*.ps1" -Name
