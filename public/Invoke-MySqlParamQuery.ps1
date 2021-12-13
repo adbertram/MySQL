@@ -40,7 +40,6 @@ function Invoke-MySqlParamQuery
         [string[]]$Parameters,
 
         [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         $Values
 	)
 	begin
@@ -56,27 +55,38 @@ function Invoke-MySqlParamQuery
 			[MySql.Data.MySqlClient.MySqlCommand]$command = New-Object MySql.Data.MySqlClient.MySqlCommand
             $command.Connection = $Connection
 			$command.CommandText = $Query
-            for($i = 0; $i -lt $parameters.Count; $i++){
-                Switch ($values[$i].GetType())
+            $cc=($parameters | Measure-Object).Count
+            $i=0
+            $parameters | ForEach-Object {
+                if ($cc -eq 1)
+                {
+                    $vv=$values
+                    $ff=$parameters
+                }
+                else
+                {
+                    $vv=$values[$i]
+                    $ff=$parameters[$i]
+                }
+                Switch ($vv.GetType())
                 {
                     System.IO.MemoryStream {
-                        $stream=[System.IO.MemoryStream]$values[$i]
+                        $stream=[System.IO.MemoryStream]$vv
                         $stream.Position=0
                         $ary=$stream.ToArray()
                         $p=[Mysql.Data.MySqlClient.MySqlParameter]::new()
-                        $p.ParameterName=$Parameters[$i]
+                        $p.ParameterName=$ff
                         $p.DbType='Object'
                         $p.Value=[byte[]]$ary
                         $tmp = $command.Parameters.Add($p)
                     }
                     default {
-                        $v=[string]$values[$i]
-                        $tmp = $command.Parameters.AddWithValue($Parameters[$i], $v)
+                        $v=[string]$vv
+                        $tmp = $command.Parameters.AddWithValue($ff, $v)
                     }
                 }
-                
+                $i+=1                
             }
-            #$command.Prepare()
 			[MySql.Data.MySqlClient.MySqlDataAdapter]$dataAdapter = New-Object MySql.Data.MySqlClient.MySqlDataAdapter($command)
 			$dataSet = New-Object System.Data.DataSet
 			$recordCount = $dataAdapter.Fill($dataSet)
