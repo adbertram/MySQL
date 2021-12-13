@@ -8,5 +8,5 @@ I'll try to add some documentation on how to use the module and some sample code
 The module has been broken into individual function files.   This makes the update and editor process easier.   They now dynamically load and export.   I created 2 directory structures one for private and public functions.
 
 ###TO-DO:
-Fix a bug in the MySQL Parameter querty when only one item is referenced.
+  [x] Fix a bug in the MySQL Parameter querty when only one item is referenced.
 
